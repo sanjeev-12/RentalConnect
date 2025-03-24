@@ -4,28 +4,73 @@ const userSchema = new mongoose.Schema({
   username: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true,
+    minlength: 3,
+    maxlength: 30,
   },
   email: {
     type: String,
     required: true,
-    unique: true
+    unique: true,
+    trim: true,
+    lowercase: true,
   },
   password: {
     type: String,
     required: true,
+    minlength: 6,
   },
   role: {
     type: String,
-    enum: ['tenant', 'owner'],
-    default: 'tenant',
+    enum: ["tenant", "owner", "admin"],
+    default: "tenant",
   },
-  avatar: {
+  phone: {
     type: String,
-    default: 'https://t4.ftcdn.net/jpg/05/09/59/75/240_F_509597532_RKUuYsERhODmkxkZd82pSHnFtDAtgbzJ.jpg'
-  }
-}, {timestamps: true})
+    required: true,
+  },
+  address: {
+    type: String,
+    required: true,
+  },
+  city: {
+    type: String,
+    required: true,
+  },
+  state: {
+    type: String,
+    required: true,
+  },
+  country: {
+    type: String,
+    required: true,
+  },
+  zipCode: {
+    type: String,
+    required: true,
+  },
+  profilePicture: {
+    type: String,
+    default: "",
+  },
+  favorites: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Listing",
+    default: [],
+  }],
+  savedProperties: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Listing",
+    default: [],
+  }],
+});
 
-const User = mongoose.model('User', userSchema)
+userSchema.pre("save", function (next) {
+  this.updatedAt = Date.now();
+  next();
+});
+
+const User = mongoose.model("User", userSchema);
 
 export default User;

@@ -33,8 +33,34 @@ export default function SignIn() {
         body: JSON.stringify(formData),
       });
 
-      const data = await res.json();
-      console.log("Response received:", data);
+      // Handle server errors properly
+      if (!res.ok) {
+        const errorMessage = `Server error: ${res.status} ${res.statusText}`;
+        console.error(errorMessage);
+        dispatch(signInFailure(errorMessage));
+        return;
+      }
+
+      // Check content type to ensure we're getting JSON
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const errorMessage = 'Server returned non-JSON response';
+        console.error(errorMessage);
+        dispatch(signInFailure(errorMessage));
+        return;
+      }
+
+      // Safely parse JSON with error handling
+      let data;
+      try {
+        data = await res.json();
+        console.log("Response received:", data);
+      } catch (parseError) {
+        console.error('JSON parsing error:', parseError);
+        dispatch(signInFailure('Failed to parse server response. Please try again later.'));
+        return;
+      }
+
       if (data.success === false) {
         dispatch(signInFailure(data.message));
         return;
@@ -43,7 +69,7 @@ export default function SignIn() {
       navigate('/');
     } catch (error) {
       console.error("Sign-in error:", error);
-      dispatch(signInFailure(error.message));
+      dispatch(signInFailure(error.message || 'An unexpected error occurred. Please try again.'));
     }
   };
 

@@ -1,0 +1,51 @@
+```
+[User] --> (3.1 Search Properties)
+(3.1 Search Properties) <--> |Property Database|
+(3.1 Search Properties) --> (3.2 View Property Details)
+
+(3.2 View Property Details) <--> |Property Database|
+(3.2 View Property Details) --> (3.3 Create Booking Request)
+
+(3.3 Create Booking Request) --> |Booking Database|
+(3.3 Create Booking Request) --> (3.4 Payment Processing)
+
+(3.4 Payment Processing) --> |Payment Database|
+(3.4 Payment Processing) --> (3.5 Booking Confirmation)
+
+(3.5 Booking Confirmation) --> |Booking Database|
+(3.5 Booking Confirmation) --> [User]
+
+[Property Owner] --> (3.6 Manage Bookings)
+(3.6 Manage Bookings) <--> |Booking Database|
+(3.6 Manage Bookings) --> (3.7 Booking Response)
+
+(3.7 Booking Response) --> |Booking Database|
+(3.7 Booking Response) --> [User]
+
+External Entities:
+- [User]
+- [Property Owner]
+
+Processes:
+- (3.1 Search Properties)
+- (3.2 View Property Details)
+- (3.3 Create Booking Request)
+- (3.4 Payment Processing)
+- (3.5 Booking Confirmation)
+- (3.6 Manage Bookings)
+- (3.7 Booking Response)
+
+Data Stores:
+- |Property Database|
+- |Booking Database|
+- |Payment Database|
+
+Data Flows:
+- Search criteria
+- Property details
+- Booking request
+- Payment information
+- Booking confirmation
+- Booking status
+- Owner response
+```

@@ -2,12 +2,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import ListingItem from "../components/ListingItem";
 import Spinner from "../components/Spinner";
+import { useSelector } from "react-redux";
 
 export default function Search() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [listings, setListings] = useState([]);
   const [showMore, setShowMore] = useState(false);
+  const [error, setError] = useState(null);
+  const { currentUser } = useSelector((state) => state.user);
   const [sidebarData, setSidebardata] = useState({
     searchTerm: "",
     type: "all",
@@ -17,8 +20,6 @@ export default function Search() {
     sort: "created_at",
     order: "desc",
   });
-
-  // console.log('s-data', sidebarData);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search); // Use location.search
@@ -51,24 +52,47 @@ export default function Search() {
     }
 
     const fetchListings = async () => {
-      setLoading(true);
-      setShowMore(false);
-      const searchQuery = urlParams.toString();
-      const res = await fetch(`/api/listing/get?${searchQuery}`);
-      const data = await res.json();
-      if (Array.isArray(data) && data.length > 0) {
-        setListings(data);
-        if (data.length > 8) {
-          setShowMore(true);
+      try {
+        setLoading(true);
+        setError(null);
+        setShowMore(false);
+
+        // Add user role parameters to the search query
+        const searchQuery = urlParams.toString();
+        let apiUrl = `/api/listing/get?${searchQuery}`;
+
+        // Append role-based parameters for filtered access
+        if (currentUser) {
+          apiUrl += `&userRole=${currentUser.role}&userId=${currentUser._id}`;
         }
-      } else {
-        setListings([]);
+
+        const res = await fetch(apiUrl);
+
+        if (!res.ok) {
+          throw new Error('Failed to fetch listings');
+        }
+
+        const data = await res.json();
+
+        if (Array.isArray(data) && data.length > 0) {
+          setListings(data);
+          if (data.length > 8) {
+            setShowMore(true);
+          }
+        } else {
+          setListings([]);
+        }
+      } catch (err) {
+        console.error('Error fetching listings:', err);
+        setError(err.message || 'An error occurred while fetching listings');
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchListings();
-  }, [location.search]);
+  }, [location.search, currentUser]);
+
   const handleChange = (e) => {
     if (
       e.target.id === "all" ||
@@ -118,17 +142,51 @@ export default function Search() {
   };
 
   const onShowMoreClick = async () => {
-    const numberOfListings = listings.length;
-    const startIndex = numberOfListings;
-    const urlParams = new URLSearchParams(location.search);
-    urlParams.set("startIndex", startIndex);
-    const searchQuery = urlParams.toString();
-    const res = await fetch(`/api/listing/get?${searchQuery}`);
-    const data = await res.json();
-    if (data.length < 9) {
-      setShowMore(false);
+    try {
+      const numberOfListings = listings.length;
+      const startIndex = numberOfListings;
+      const urlParams = new URLSearchParams(location.search);
+      urlParams.set("startIndex", startIndex);
+      const searchQuery = urlParams.toString();
+
+      // Include user role parameters
+      let apiUrl = `/api/listing/get?${searchQuery}`;
+      if (currentUser) {
+        apiUrl += `&userRole=${currentUser.role}&userId=${currentUser._id}`;
+      }
+
+      const res = await fetch(apiUrl);
+
+      if (!res.ok) {
+        throw new Error('Failed to fetch more listings');
+      }
+
+      const data = await res.json();
+
+      if (data.length < 9) {
+        setShowMore(false);
+      }
+      setListings([...listings, ...data]);
+    } catch (err) {
+      console.error('Error loading more listings:', err);
+      setError(err.message || 'Failed to load more listings');
     }
-    setListings([...listings, ...data]);
+  };
+
+  // Helper function to get title based on user role
+  const getListingsTitle = () => {
+    if (!currentUser) return 'All Available Properties';
+
+    switch(currentUser.role) {
+      case 'admin':
+        return 'All Properties (Admin View)';
+      case 'owner':
+        return 'Your Listed Properties';
+      case 'tenant':
+        return 'Available Properties for Booking';
+      default:
+        return 'All Available Properties';
+    }
   };
 
   return (
@@ -197,7 +255,7 @@ export default function Search() {
           </div>
 
           <div className="flex gap-2 flex-wrap items-center">
-            <label className="font-semibold">Aninities:</label>
+            <label className="font-semibold">Amenities:</label>
 
             <div className="flex gap-2">
               <input
@@ -207,7 +265,7 @@ export default function Search() {
                 onChange={handleChange}
                 checked={sidebarData.parking}
               />
-              <span>Parking Lot</span>
+              <span>Parking</span>
             </div>
 
             <div className="flex gap-2">
@@ -225,12 +283,10 @@ export default function Search() {
           <div className="flex items-center gap-2">
             <label className="font-semibold">Sort:</label>
             <select
-              className="border rounded-lg p-3"
-              name="sort_order"
-              id="sort_order"
               onChange={handleChange}
               defaultValue={"created_at_desc"}
-              // disabled="disabled"
+              id="sort_order"
+              className="border rounded-lg p-3"
             >
               <option value="regularPrice_desc">Price high to low</option>
               <option value="regularPrice_asc">Price low to high</option>
@@ -238,25 +294,28 @@ export default function Search() {
               <option value="createdAt_asc">Oldest</option>
             </select>
           </div>
-
-          <button className="bg-slate-700 text-white p-3 rounded-lg uppercase hover:opacity-90">
+          <button className="bg-slate-700 text-white p-3 rounded-lg uppercase hover:opacity-95">
             Search
           </button>
         </form>
       </div>
-
       <div className="flex-1">
         <h1 className="text-3xl font-semibold border-b p-3 text-slate-700 mt-5">
-          Listing results:
+          {getListingsTitle()}
         </h1>
         <div className="p-7 flex flex-wrap gap-4">
           {!loading && listings.length === 0 && (
-            <p className="text-xl text-slate-700">No listing found!</p>
+            <p className="text-xl text-slate-700">
+              No listings found for your criteria!
+            </p>
+          )}
+          {error && (
+            <p className="text-red-700 text-xl">{error}</p>
           )}
           {loading && (
-            <p className="text-xl text-slate-700 text-center w-full">
+            <div className="flex justify-center items-center w-full">
               <Spinner />
-            </p>
+            </div>
           )}
 
           {!loading &&
@@ -264,17 +323,16 @@ export default function Search() {
             listings.map((listing) => (
               <ListingItem key={listing._id} listing={listing} />
             ))}
-        </div>
-        {showMore && (
-          <div className="flex justify-center">
+
+          {showMore && (
             <button
               onClick={onShowMoreClick}
-              className="bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition-all duration-300 ease-in-out mb-4"
+              className="text-green-700 hover:underline p-7 text-center w-full"
             >
               Show more
             </button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

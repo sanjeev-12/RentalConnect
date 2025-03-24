@@ -57,11 +57,6 @@ const listingSchema = new mongoose.Schema(
       required: true,
     },
 
-    offer: {
-      type: Boolean,
-      required: true,
-    },
-
     imageUrls: {
       type: Array,
       required: true,
@@ -71,6 +66,17 @@ const listingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+
+    status: {
+      type: String,
+      enum: ['available', 'booked'],
+      default: 'available'
+    },
+
+    bookedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
   },
   {
     timestamps: true,

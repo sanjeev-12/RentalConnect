@@ -18,6 +18,9 @@ import {
 } from "../redux/user/userSlice";
 import { Link } from "react-router-dom";
 import TenantMessages from "../components/TenantMessages";
+import OwnerBookings from '../components/OwnerBookings';
+import RentReminders from '../components/RentReminders';
+import { FaBell } from 'react-icons/fa';
 
 export default function Profile() {
   const fileRef = useRef(null);
@@ -323,12 +326,31 @@ export default function Profile() {
       </p>
       <p className="text-green-700">{successMessage}</p>
 
-      <button className="text-green-700 w-full" onClick={handleShowListings}>
-        Show Listings
-      </button>
-      <p className="text-red-700 mt-5">
-        {showListingsError ? "Error showing listings" : ""}
-      </p>
+      {currentUser.role === 'owner' && (
+        <>
+          <button
+            onClick={handleShowListings}
+            className="text-green-700 w-full mt-4"
+          >
+            Show Listings
+          </button>
+          
+          <Link 
+            to="/owner-dashboard"
+            className="bg-blue-600 text-white p-3 rounded-lg uppercase text-center hover:opacity-95 mt-4 flex items-center justify-center"
+          >
+            <FaBell className="mr-2" /> Manage Tenant Reminders
+          </Link>
+        </>
+      )}
+
+      {(currentUser.role === 'owner' || currentUser.role === 'tenant') && (
+        <div className="mt-6">
+          <RentReminders />
+        </div>
+      )}
+
+      <p className="text-red-700 mt-5">{showListingsError ? "Error showing listings" : ""}</p>
 
       {userListings && (
         <div className="flex flex-col gap-4">
@@ -369,14 +391,9 @@ export default function Profile() {
         </div>
       )}
 
-      <button
-        onClick={() => setShowMessages(!showMessages)}
-        className="bg-blue-500 text-white p-3 rounded-lg uppercase hover:opacity-90"
-      >
-        {showMessages ? "Hide Messages" : "Show Messages"}
-      </button>
-
       {showMessages && <TenantMessages />}
+
+      <OwnerBookings />
     </div>
   );
 }

@@ -16,6 +16,8 @@ import {
 import "swiper/css/bundle";
 import { useSelector } from "react-redux";
 import Contact from "../components/Contact";
+import BookProperty from "../components/BookProperty";
+import ReviewSection from "../components/ReviewSection";
 
 export default function Listing() {
   const params = useParams();
@@ -23,7 +25,8 @@ export default function Listing() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false); 
   const [copied, setCopied] = useState(false);
-  const [contact, setContact] = useState(false)
+  const [contact, setContact] = useState(false);
+  const [showBooking, setShowBooking] = useState(false);
   const { currentUser } = useSelector((state) => state.user);
 
   SwiperCore.use([Navigation]);
@@ -54,7 +57,7 @@ export default function Listing() {
 
   return (
     <main>
-      {loading && <p className="text-center my-7 text-2xl">{<Spinner />}</p>},
+      {loading && <p className="text-center my-7 text-2xl">{<Spinner />}</p>}
       {error && (
         <p className="text-center my-7 text-2xl">Something Went Wrong...!</p>
       )}
@@ -100,6 +103,15 @@ export default function Listing() {
                 : listing.regularPrice.toLocaleString("en-US")}
               {listing.type === "rent" && ' / month'}
             </p>
+            
+            {/* Property Status */}
+            {listing.status === 'booked' && (
+              <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+                <p className="font-bold">Currently Unavailable</p>
+                <p>This property is currently booked and unavailable for new bookings.</p>
+              </div>
+            )}
+            
             <p className="flex items-center mt-6 gap-2 text-slate-600 text-sm">
               <FaMapMarkerAlt className="text-green-700" />
               {listing.address}
@@ -142,17 +154,40 @@ export default function Listing() {
                 {listing.furnished ? "Furnished" : "Unfurnished"}
               </li>
             </ul>
-            {currentUser && listing.userRef !== currentUser._id && !contact && (
-              <button
-                onClick={() => setContact(true)}
-                className="bg-slate-700 text-white rounded-lg uppercase hover:opacity-95 p-3"
-              >
-                Contact landlord
-              </button>
+            
+            {/* Action buttons for logged in users */}
+            {currentUser && listing.userRef !== currentUser._id && (
+              <div className="flex flex-col md:flex-row gap-4 mt-4">
+                <button
+                  onClick={() => {
+                    setContact(!contact);
+                    setShowBooking(false);
+                  }}
+                  className={`${contact ? 'bg-slate-800' : 'bg-slate-700'} text-white rounded-lg uppercase hover:opacity-95 p-3 flex-1`}
+                >
+                  Contact landlord
+                </button>
+                <button
+                  onClick={() => {
+                    setShowBooking(!showBooking);
+                    setContact(false);
+                  }}
+                  className={`${showBooking ? 'bg-blue-800' : 'bg-blue-600'} text-white rounded-lg uppercase hover:opacity-95 p-3 flex-1`}
+                  disabled={listing.status === 'booked'}
+                >
+                  {listing.status === 'booked' ? 'Currently Unavailable' : 'Book Property'}
+                </button>
+              </div>
             )}
-            {contact && (
-              <Contact listing={listing} />
-            )}
+            
+            {/* Show the appropriate component based on user selection */}
+            {contact && <Contact listing={listing} />}
+            {showBooking && <BookProperty listing={listing} />}
+
+            {/* Reviews Section */}
+            <div className="mt-8 border-t pt-8">
+              <ReviewSection listingId={params.listingId} />
+            </div>
           </div>
         </>
       )}

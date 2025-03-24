@@ -2,7 +2,6 @@ import Listing from "../models/listing.model.js"
 import { errorHandler } from "../utils/error.js"
 
 export const createListing = async (req, res, next) => {
-  
   try {
     const listing = await Listing.create(req.body)
     return res.status(201).json(listing)
@@ -55,7 +54,9 @@ export const updateListing = async (req, res, next) => {
 
 export const getListing = async (req, res, next) => {
   try {
-    const listing = await Listing.findById(req.params.id);
+    const listing = await Listing.findById(req.params.id)
+      .populate('bookedBy', 'username email');
+    
     if(!listing) {
       return next(errorHandler(404, 'Listing not found'))
     }
@@ -69,6 +70,8 @@ export const getListings = async (req, res, next) => {
   try {
     const limit = parseInt(req.query.limit) || 9;
     const startIndex = parseInt(req.query.startIndex) || 0;
+    const userRole = req.user?.role;
+    const userId = req.user?.id;
 
     let offer = req.query.offer;
     if (offer === undefined || offer === 'false') {
@@ -96,15 +99,44 @@ export const getListings = async (req, res, next) => {
 
     const order = req.query.order || 'desc';
 
+    // Build user-role specific filters
+    let userFilter = {};
+    let statusFilter = {};
+
+    // Role-specific filtering
+    if (userRole === 'owner') {
+      // Owners should only see their own listings
+      userFilter = { userRef: userId };
+    } else if (userRole === 'tenant') {
+      // Tenants should only see available listings or ones they've booked
+      statusFilter = { $or: [{ status: 'available' }, { bookedBy: userId }] };
+    } else if (userRole === 'admin') {
+      // Admin can see all listings, no additional filters needed
+    } else {
+      // Public/non-logged in users can only see available listings
+      statusFilter = { status: 'available' };
+    }
+
+    // Override with query parameter if explicitly set
+    if (req.query.includeBooked === 'true') {
+      statusFilter = {};
+    }
+
     const listings = await Listing.find({
       name: {$regex: searchTerm, $options: 'i'},
       offer,
       furnished,
       parking,
-      type
-    }).sort({
+      type,
+      ...userFilter,
+      ...statusFilter
+    })
+    .sort({
       [sort]: order
-    }).limit(limit).skip(startIndex)
+    })
+    .limit(limit)
+    .skip(startIndex)
+    .populate('bookedBy', 'username email');
 
     return res.status(200).json(listings)
     

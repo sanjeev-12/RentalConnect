@@ -21,3 +21,24 @@ a {
 a:hover {
   text-decoration: underline;
 }
+
+.slide-down {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s ease-in-out;
+}
+
+.slide-down.active {
+  max-height: 1000px;
+}
+
+.content-fade {
+  opacity: 0;
+  transform: translateY(-20px);
+  transition: all 0.3s ease-in-out;
+}
+
+.content-fade.active {
+  opacity: 1;
+  transform: translateY(0);
+}

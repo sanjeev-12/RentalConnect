@@ -90,6 +90,80 @@ export const getBookings = async (req, res, next) => {
   }
 };
 
+// Add a favorite listing
+export const addFavorite = async (req, res, next) => {
+  const { userId, listingId, listing } = req.body;
+  
+  try {
+    const user = await User.findById(userId);
+    if (!user) return next(errorHandler(404, "User not found"));
+
+    // Add to favorites array if it doesn't exist
+    if (!user.favorites) {
+      user.favorites = [];
+    }
+
+    // Check if listing is already in favorites
+    if (!user.favorites.some(fav => fav._id.toString() === listingId)) {
+      user.favorites.push(listing);
+      await user.save();
+    }
+
+    res.status(200).json({ success: true, favorites: user.favorites });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Add a booking
+export const addBooking = async (req, res, next) => {
+  const { userId, listingId, listing } = req.body;
+  
+  try {
+    const user = await User.findById(userId);
+    if (!user) return next(errorHandler(404, "User not found"));
+
+    // Add to bookings array if it doesn't exist
+    if (!user.bookings) {
+      user.bookings = [];
+    }
+
+    // Check if listing is already in bookings
+    if (!user.bookings.some(book => book._id.toString() === listingId)) {
+      user.bookings.push(listing);
+      await user.save();
+    }
+
+    res.status(200).json({ success: true, bookings: user.bookings });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get user's favorites
+export const getFavorites = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return next(errorHandler(404, "User not found"));
+
+    res.status(200).json(user.favorites || []);
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get user's bookings
+export const getUserBookings = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return next(errorHandler(404, "User not found"));
+
+    res.status(200).json(user.bookings || []);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Export all functions properly
 // export {
 //   testing,
