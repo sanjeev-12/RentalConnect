@@ -1,0 +1,83 @@
+REAL ESTATE PROJECT - ENTITY RELATIONSHIP DIAGRAM
+==================================================
+
+[USER]
+  |
+  |-- PK: _id
+  |-- username, email, password
+  |-- role (tenant, owner, admin)
+  |-- contact info (phone, address, etc.)
+  |-- profilePicture
+  |-- favorites[]
+  |-- savedProperties[]
+  |
+  |----< owns >-----------------+
+  |                            |
+  |----< makes as tenant >----+|
+  |                          |||
+  |----< receives as owner >-+||
+  |                          |||
+  |----< favorites >---------+||
+  |                           ||
+  |----< sends/receives >-----+|
+  |    (CHAT)                  |
+  |                            |
+  |----< writes >--------------+
+       (REVIEW)                |
+                               |
+[LISTING] <-------------------+
+  |
+  |-- PK: _id
+  |-- FK: userRef (owner)
+  |-- FK: bookedBy (tenant)
+  |-- name, description, address
+  |-- prices, features (bedrooms, etc.)
+  |-- imageUrls[]
+  |-- status (available/booked)
+  |
+  |----< has >------------------+
+  |                             |
+  |----< receives >-----------+ |
+       (REVIEW)               | |
+                              | |
+[BOOKING] <------------------+| |
+  |                           | |
+  |-- PK: _id                 | |
+  |-- FK: listingId           | |
+  |-- FK: tenantId            | |
+  |-- FK: ownerRef            | |
+  |-- tenantDetails           | |
+  |-- status                  | |
+  |-- bookingDate             | |
+  |                           | |
+  |----< has >---------------+| |
+                             || |
+[REMINDER] <----------------+|| |
+  |                          | |
+  |-- PK: _id                | |
+  |-- FK: bookingId          | |
+  |-- FK: tenantId           | |
+  |-- FK: ownerId            | |
+  |-- FK: listingId <--------+ |
+  |-- dueDate                  |
+  |-- amount                   |
+  |-- status                   |
+  |-- reminderSettings         |
+                               |
+[CHAT] <----------------------+
+  |
+  |-- PK: _id
+  |-- FK: sender
+  |-- FK: receiver
+  |-- message
+  |-- read status
+  |-- timestamps
+
+[REVIEW] <---------------------+
+  |
+  |-- PK: _id
+  |-- FK: listingId
+  |-- FK: userId
+  |-- rating
+  |-- comment
+  |-- createdAt
